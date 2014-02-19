@@ -57,10 +57,10 @@ public class Processor {
         boolean matched = false;
 
         @Override
-        protected void processLineEnd(int i) throws IOException {
+        protected void processLineEnd(long currentPosition) throws IOException {
             if (matched) {
                 System.out.print(currentDir.relativize(file) + " (" + lineNumber + "): ");
-                printLine(i);
+                printLine(currentPosition);
                 System.out.println();
             }
         }
@@ -68,11 +68,16 @@ public class Processor {
         @Override
         protected void triggerNewLine() {
             matched = false;
+            setSwitchTrieState(true);
+            resetTrie();
         }
 
         @Override
         protected void triggerProcessByte(MultiCharsetTrie.TrieNode node, byte _byte) {
             if(!matched) matched = node.getLongestMatchingPair() != null;
+            if(matched){
+                setSwitchTrieState(false);
+            }
         }
     }
 
@@ -84,10 +89,10 @@ public class Processor {
             pairs = new HashSet<MultiCharsetTrie.Pair>();
         }
 
-        protected void processLineEnd(int i) throws IOException {
+        protected void processLineEnd(long currentPosition) throws IOException {
             if (!pairs.isEmpty()) {
                 System.out.print(currentDir.relativize(file) + " (" + lineNumber + "): ");
-                printLine(i);
+                printLine(currentPosition);
 
                 System.out.print("  //words: {");
                 for (MultiCharsetTrie.Pair pair : pairs) {

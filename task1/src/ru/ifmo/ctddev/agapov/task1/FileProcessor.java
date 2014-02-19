@@ -1,15 +1,12 @@
 package ru.ifmo.ctddev.agapov.task1;
 
-import ru.ifmo.ctddev.agapov.task1.trie.AhoCorasicTrie;
 import ru.ifmo.ctddev.agapov.task1.trie.MultiCharsetTrie;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
 
 /**
  * Created with IntelliJ IDEA.
@@ -29,17 +26,32 @@ public abstract class FileProcessor {
     byte[] buffer;
     RandomAccessFile raf;
     Path file;
+    private MultiCharsetTrie trie;
     private MultiCharsetTrie.TrieNode node;
 
+    private boolean switchTrieState = true;
+
     FileProcessor(Path file, MultiCharsetTrie trie) throws FileNotFoundException {
+        this.trie = trie;
         this.file = file;
         lineCache = new byte[lineCacheSize];
         buffer = new byte[bufferSize];
+        resetTrie();
+    }
+
+    protected void resetTrie(){
         node = trie.getRoot();
     }
 
+    public boolean isSwitchTrieState() {
+        return switchTrieState;
+    }
 
-    protected abstract void processLineEnd(int i) throws IOException;
+    public void setSwitchTrieState(boolean switchTrieState) {
+        this.switchTrieState = switchTrieState;
+    }
+
+    protected abstract void processLineEnd(long currentPosition) throws IOException;
 
     void printBytesFromFile(long byteCount) throws IOException {
         int byteRead = 0;
@@ -51,20 +63,19 @@ public abstract class FileProcessor {
     }
 
 
-    protected void printLine(int i) throws IOException {
+    protected void printLine(long currentPosition) throws IOException {
         if (lineLength < 0) {
             long fPointer = raf.getFilePointer();
-            long currentPosition = getExactCurrentPosition(i);
             raf.seek(lineStartPosition);
-            printBytesFromFile(currentPosition - fPointer);
+            printBytesFromFile(currentPosition - lineStartPosition);
             raf.seek(fPointer);
         } else {
             System.out.write(lineCache, 0, lineLength);
         }
     }
 
-    void startNewLine(int i) throws IOException {
-        lineStartPosition = getExactCurrentPosition(i) + 1;
+    void startNewLine(long currentPosition) throws IOException {
+        lineStartPosition = currentPosition + 1;
         lineLength = 0;
         ++lineNumber;
         triggerNewLine();
@@ -73,7 +84,8 @@ public abstract class FileProcessor {
     protected abstract void triggerNewLine();
 
     void processByte(byte _byte) {
-        node = node.step(_byte);
+        if(switchTrieState)
+            node = node.step(_byte);
         triggerProcessByte(node, _byte);
     }
 
@@ -86,16 +98,17 @@ public abstract class FileProcessor {
         }
     }
 
-    long getExactCurrentPosition(int i) throws IOException {
-        return raf.getFilePointer() - bufferSize + i;
+    long getExactCurrentPosition(int i, long byteRead) throws IOException {
+        return raf.getFilePointer() - byteRead + i;
     }
 
     void proccesReadBytes(int byteRead) throws IOException {
         for (int i = 0; i < byteRead; ++i) {
             byte _byte = buffer[i];
-            if ((char) _byte == '\n') {
-                processLineEnd(i);
-                startNewLine(i);
+            long currentPosition = getExactCurrentPosition(i, byteRead);
+            if (_byte == '\n') {
+                processLineEnd(currentPosition);
+                startNewLine(currentPosition);
             } else
                 cacheByte(_byte);
             processByte(_byte);
