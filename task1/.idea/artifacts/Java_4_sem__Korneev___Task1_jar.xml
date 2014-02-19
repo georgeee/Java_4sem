@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact name="Java 4 sem, Korneev - Task1:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Java_4_sem__Korneev___Task1_jar</output-path>
+    <root id="root">
+      <element id="archive" name="Java 4 sem, Korneev - Task1.jar">
+        <element id="module-output" name="Java 4 sem, Korneev - Task1" />
+      </element>
+    </root>
+  </artifact>
+</component>
