@@ -39,15 +39,10 @@ public class MultiCharsetTrie extends AhoCorasicTrie<MultiCharsetTrie.VertexData
         ByteBuffer byteBuffer =   charset.encode(word);
         bytes = new byte[byteBuffer.remaining()];
         byteBuffer.get(bytes);
-//        System.out.print("  Adding word (charset "+charset+"): ");
-//        System.out.println(Arrays.toString(bytes));
         addWord(bytes, new VertexData(word, charset));
     }
 
     public void addWord(String word){
-//        System.out.print("Adding word: ");
-//        byte [] bytes = word.getBytes();
-//        System.out.println(Arrays.toString(bytes));
         addWord(word, Charset.forName("UTF-8"));
         addWord(word, Charset.forName("KOI8-R"));
         addWord(word, Charset.forName("CP1251"));

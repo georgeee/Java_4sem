@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
-import java.util.Arrays;
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,7 +27,6 @@ public abstract class FileProcessor {
     Path file;
     private MultiCharsetTrie trie;
     private MultiCharsetTrie.TrieNode node;
-
     private boolean switchTrieState = true;
 
     FileProcessor(Path file, MultiCharsetTrie trie) throws FileNotFoundException {
@@ -39,7 +37,7 @@ public abstract class FileProcessor {
         resetTrie();
     }
 
-    protected void resetTrie(){
+    protected void resetTrie() {
         node = trie.getRoot();
     }
 
@@ -62,7 +60,6 @@ public abstract class FileProcessor {
         }
     }
 
-
     protected void printLine(long currentPosition) throws IOException {
         if (lineLength < 0) {
             long fPointer = raf.getFilePointer();
@@ -84,7 +81,7 @@ public abstract class FileProcessor {
     protected abstract void triggerNewLine();
 
     void processByte(byte _byte) {
-        if(switchTrieState)
+        if (switchTrieState)
             node = node.step(_byte);
         triggerProcessByte(node, _byte);
     }
@@ -117,14 +114,19 @@ public abstract class FileProcessor {
 
     void process() throws IOException {
         raf = new RandomAccessFile(file.toFile(), "r");
-        int byteRead = 0;
-        while (byteRead >= 0) {
-            byteRead = raf.read(buffer);
-            if (byteRead < 0) {
-                buffer[0] = '\n';
-                proccesReadBytes(1);
-            } else
-                proccesReadBytes(byteRead);
+        try {
+            int byteRead = 0;
+            while (byteRead >= 0) {
+                byteRead = raf.read(buffer);
+                if (byteRead < 0) {
+                    buffer[0] = '\n';
+                    proccesReadBytes(1);
+                } else
+                    proccesReadBytes(byteRead);
+            }
+        } catch (IOException ex) {
+            raf.close();
+            throw ex;
         }
         raf.close();
     }

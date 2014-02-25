@@ -26,6 +26,8 @@ public class Main {
                         words.add(line);
                     }
                 } catch (IOException e) {
+                    System.err.println("Error occurred while reading words from stdin");
+                    e.printStackTrace();
                 }
             }else words.add(args[i]);
         }
