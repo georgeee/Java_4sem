@@ -16,7 +16,7 @@ import java.nio.file.Path;
  */
 public abstract class FileProcessor {
 
-    static final int bufferSize = 1024;
+    static final int bufferSize = 1024 * 1024;
     static final int lineCacheSize = 64 * bufferSize;
     long lineStartPosition = 0;
     int lineNumber = 1;
