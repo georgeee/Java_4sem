@@ -6,7 +6,7 @@ import java.util.*;
  * Created with IntelliJ IDEA.
  * User: georgeee
  * Date: 06.03.14
- * Time: 16:06
+ * Time: 8:38
  * To change this template use File | Settings | File Templates.
  */
 public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet<E> {
@@ -18,14 +18,16 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
     private Comparator<Object> objectComparator;
 
     public ImmutableArraySet(Collection<? extends E> c, Comparator<? super E> comparator) {
-        elements = c.toArray();
-        Arrays.sort(elements, 0, elements.length, getObjectComparator());
-        ArrayList al = new ArrayList();
+        elements = new Object[0];
         this.comparator = comparator;
-        for(Object o : elements)
-            if(al.size() == 0 || compareElements(al.get(al.size()-1), o) != 0) al.add(o);
-        elements = new Object[al.size()];
-        elements = al.toArray(elements);
+        Object [] objs = c.toArray();
+        Arrays.sort(objs, getObjectComparator());
+        ArrayList list = new ArrayList();
+        for(int i=0; i< objs.length; ++i){
+            if(i==0 || compareElements(list.get(list.size() - 1), objs[i]) != 0)
+                list.add(objs[i]);
+        }
+        elements = list.toArray();
     }
 
     public ImmutableArraySet(Comparator<? super E> comparator) {
@@ -43,6 +45,7 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
     public ImmutableArraySet(SortedSet<E> s) {
         this(s, s.comparator());
     }
+
 
     private E getElement(int i) {
         return (E) elements[i];
@@ -74,11 +77,6 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
     }
 
     @Override
-    public void clear() {
-        elements = new Object[0];
-    }
-
-    @Override
     public boolean contains(Object o) {
         return binSearch(o) >= 0;
     }
@@ -93,9 +91,20 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
         return ascSubSet.floor(e);
     }
 
+    private int ceilingIndex(E e) {
+        int bs = binSearch(e);
+        if (bs >= 0) return bs;
+        bs = -bs - 1;
+        if (bs < size()) return bs;
+        return -1;
+    }
+
     @Override
     public E ceiling(E e) {
-        return ascSubSet.ceiling(e);
+        int bs = ceilingIndex(e);
+        if (bs == -1)
+            return null;
+        return (E) getElement(bs);
     }
 
     @Override
@@ -130,17 +139,17 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
 
     @Override
     public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-        return new AscendingArraySubSet<E>(this, fromElement, fromInclusive, toElement, toInclusive);
+        return ascSubSet.subSet(fromElement, fromInclusive, toElement, toInclusive);
     }
 
     @Override
     public NavigableSet<E> headSet(E toElement, boolean inclusive) {
-        return new AscendingArraySubSet<E>(this, null, false, toElement, inclusive);
+        return ascSubSet.headSet(toElement, inclusive);
     }
 
     @Override
     public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
-        return new AscendingArraySubSet<E>(this, fromElement, inclusive, null, false);
+        return ascSubSet.tailSet(fromElement, inclusive);
     }
 
     @Override
@@ -149,41 +158,35 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
     }
 
     @Override
-    public SortedSet<E> subSet(E fromElement, E toElement) {
-        return subSet(fromElement, true, toElement, false);
+    public NavigableSet<E> subSet(E fromElement, E toElement) {
+        return ascSubSet.subSet(fromElement, toElement);
     }
 
     @Override
-    public SortedSet<E> headSet(E toElement) {
-        return headSet(toElement, false);
+    public NavigableSet<E> headSet(E toElement) {
+        return ascSubSet.headSet(toElement);
     }
 
     @Override
-    public SortedSet<E> tailSet(E fromElement) {
-        return tailSet(fromElement, true);
+    public NavigableSet<E> tailSet(E fromElement) {
+        return ascSubSet.tailSet(fromElement);
     }
 
     @Override
     public E first() {
-        if (isEmpty()) return null;
+        if (isEmpty()) throw new NoSuchElementException();
         return (E) getElement(0);
     }
 
     @Override
     public E last() {
-        if (isEmpty()) return null;
+        if (isEmpty()) throw new NoSuchElementException();
         return (E) getElement(size() - 1);
     }
 
     @Override
     public int size() {
         return elements.length;
-    }
-
-    private void removeInRange(int start, int end) {
-        Object[] newElements = new Object[elements.length - (end - start)];
-        System.arraycopy(elements, 0, newElements, 0, start);
-        System.arraycopy(elements, end, newElements, start, elements.length - end);
     }
 
     private AscendingArraySubSet<E> getArraySubSet(boolean descendingOrder, ImmutableArraySet<E> s, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
@@ -225,13 +228,13 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
         }
 
         @Override
-        public E last() {
-            return super.first();
+        public E lastImpl() {
+            return super.firstImpl();
         }
 
         @Override
-        public E first() {
-            return super.last();
+        public E firstImpl() {
+            return super.lastImpl();
         }
 
         @Override
@@ -255,6 +258,7 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
         private ImmutableArraySet<E> s;
         private E fromElement, toElement;
 
+
         AscendingArraySubSet(ImmutableArraySet<E> s, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
             this.s = s;
             this.fromElement = fromElement;
@@ -272,7 +276,7 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
         }
 
         boolean checkInRange(E e) {
-            if(e == null) return false;
+            if (e == null) return false;
             boolean result = true;
             if (fromElement != null) {
                 int cmpr = s.compareElements(fromElement, e);
@@ -285,116 +289,76 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
             return result;
         }
 
-        @Override
-        public E floor(E e) {
-            return new NonStrictElementFindImpl() {
-                @Override
-                E insideRange(E e) {
-                    return s.floor(e);
-                }
 
-                @Override
-                E lessThanRange(E e) {
-                    return null;
-                }
-
-                @Override
-                E greaterThanRange(E e) {
-                    return last();
-                }
-
-            }.get(e);
+        int ceilingIndex(E e) {
+            int cI = s.ceilingIndex(e);
+            int start = getIndexRangeStart();
+            int end = getIndexRangeEnd();
+            if(start <= cI && cI < end) return cI;
+            if(cI >= 0 && cI < start) return start;
+            return -1;
         }
 
         @Override
         public E ceiling(E e) {
-            return new NonStrictElementFindImpl() {
-                @Override
-                E insideRange(E e) {
-                    return s.ceiling(e);
-                }
+            int ceilingIndex = ceilingIndex(e);
+            if(ceilingIndex < 0) return null;
+            return (E) s.getElement(ceilingIndex);
+        }
 
-                @Override
-                E lessThanRange(E e) {
-                    return first();
-                }
 
-                @Override
-                E greaterThanRange(E e) {
-                    return null;
-                }
+        @Override
+        public E higher(E e) {
+            int cI = ceilingIndex(e);
+            if(cI < 0) return null;
+            if(s.compareElements(s.getElement(cI), e) == 0)
+                ++cI;
+            if(cI < getIndexRangeEnd()) return (E) s.getElement(cI);
+            return null;
+        }
 
-            }.get(e);
+        @Override
+        public E floor(E e) {
+            int lI = lowerIndex(e);
+            int start = getIndexRangeStart();
+            int end = getIndexRangeEnd();
+            if(end == start) return null;
+            E first = s.getElement(start);
+            if(lI < 0) return s.compareElements(e, first) == 0 ? first : null;
+            if(start <= lI + 1 && lI + 1 < end && s.compareElements(e, s.getElement(lI + 1)) == 0)
+                ++lI;
+            return (E) s.getElement(lI);
+        }
+
+        private int lowerIndex(E e){
+            int cI = ceilingIndex(e);
+            int start = getIndexRangeStart();
+            int end = getIndexRangeEnd();
+            if(cI < 0) cI = end - 1;
+            else --cI;
+            if(start <= cI && cI < end) return cI;
+            return -1;
         }
 
         @Override
         public E lower(E e) {
-            return new ElementFindImpl() {
-                @Override
-                E insideRange(E e) {
-                    return s.lower(e);
-                }
-
-                @Override
-                E lessThanRange(E e) {
-                    return null;
-                }
-
-                @Override
-                E greaterThanRange(E e) {
-                    return last();
-                }
-
-                @Override
-                E equalsToLeftEdge(E e) {
-                    return null;
-                }
-
-                @Override
-                E equalsToRightEdge(E e) {
-                    return insideRange(e);
-                }
-            }.get(e);
-        }
-
-        @Override
-        public E higher(E e) {
-            return new ElementFindImpl() {
-                @Override
-                E insideRange(E e) {
-                    return s.higher(e);
-                }
-
-                @Override
-                E lessThanRange(E e) {
-                    return first();
-                }
-
-                @Override
-                E greaterThanRange(E e) {
-                    return null;
-                }
-
-                @Override
-                E equalsToLeftEdge(E e) {
-                    return insideRange(e);
-                }
-
-                @Override
-                E equalsToRightEdge(E e) {
-                    return null;
-                }
-            }.get(e);
+            int lI = lowerIndex(e);
+            if(lI < 0) return null;
+            return (E) s.getElement(lI);
         }
 
         @Override
         public E pollFirst() {
-            throw new UnsupportedOperationException();
+            E el = firstImpl();
+            remove(el);
+            return el;
         }
 
         @Override
         public E pollLast() {
-            throw new UnsupportedOperationException();
+            E el = lastImpl();
+            remove(el);
+            return el;
         }
 
         protected int getIndexRangeStart() {
@@ -407,7 +371,14 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
         protected int getIndexRangeEnd() {
             if (toElement == null) return s.size();
             int bst = s.binSearch(toElement);
-            if (bst >= 0) return bst + (toInclusive ? 1 : 0);
+            if (bst >= 0) {
+                if (toInclusive)
+                    return bst + 1;
+                if (!fromInclusive && s.compareElements(fromElement, toElement) == 0) {
+                    return bst + 1;
+                }
+                return bst;
+            }
             return -bst - 1;
         }
 
@@ -438,7 +409,7 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
 
                 @Override
                 public void remove() {
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("Modification not allowed");
                 }
             };
         }
@@ -466,111 +437,82 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
 
                 @Override
                 public void remove() {
-                    s.removeInRange(index - 1, index);
-                    --index;
+                    throw new UnsupportedOperationException("Modification not allowed");
                 }
             };
         }
 
         @Override
         public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-            if (!checkInRange(fromElement)) {
-                fromElement = this.fromElement;
-                fromInclusive = this.fromInclusive;
-            }
-            if (!checkInRange(toElement)) {
-                toElement = this.toElement;
-                toInclusive = this.toInclusive;
-            }
+            if (fromElement == null) throw new NullPointerException("fromElement is null");
+            if (toElement == null) throw new NullPointerException("toElement is null");
+            if (!checkInRange(fromElement))
+                throw new IllegalArgumentException("fromKey is not in valid range of current set");
+            if (!checkInRange(toElement))
+                throw new IllegalArgumentException("toKey is not in valid range of current set");
+            if (s.compareElements(fromElement, toElement) > 0)
+                throw new IllegalArgumentException("fromKey > toKey");
             return s.getArraySubSet(isDescending(), s, fromElement, fromInclusive, toElement, toInclusive);
         }
 
         @Override
         public NavigableSet<E> headSet(E toElement, boolean inclusive) {
-            return subSet(null, false, toElement, inclusive);
+            if (toElement == null) throw new NullPointerException("toElement is null");
+            if (!checkInRange(toElement)) throw new IllegalArgumentException("toElement is not in set's range");
+            return s.getArraySubSet(isDescending(), s, null, false, toElement, inclusive);
         }
 
         @Override
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
-            return subSet(fromElement, inclusive, null, false);
+            if (fromElement == null) throw new NullPointerException("fromElement is null");
+            if (!checkInRange(fromElement)) throw new IllegalArgumentException("fromElement is not in set's range");
+            return s.getArraySubSet(isDescending(), s, fromElement, inclusive, null, false);
         }
 
         @Override
-        public SortedSet<E> subSet(E fromElement, E toElement) {
+        public NavigableSet<E> subSet(E fromElement, E toElement) {
             return subSet(fromElement, true, toElement, false);
         }
 
         @Override
-        public SortedSet<E> headSet(E toElement) {
+        public NavigableSet<E> headSet(E toElement) {
             return headSet(toElement, false);
         }
 
         @Override
-        public SortedSet<E> tailSet(E fromElement) {
+        public NavigableSet<E> tailSet(E fromElement) {
             return tailSet(fromElement, true);
         }
 
         @Override
         public E first() {
+            E result = firstImpl();
+            if (result == null) throw new NoSuchElementException();
+            return result;
+        }
+
+        @Override
+        public E last() {
+            E result = firstImpl();
+            if (result == null) throw new NoSuchElementException();
+            return result;
+        }
+
+        protected E firstImpl() {
             int start = getIndexRangeStart();
             int end = getIndexRangeEnd();
             if (start != end) return s.getElement(start);
             return null;
         }
 
-        @Override
-        public E last() {
+
+        protected E lastImpl() {
             int start = getIndexRangeStart();
             int end = getIndexRangeEnd();
             if (start != end) return s.getElement(end - 1);
             return null;
         }
 
-        private abstract class ElementFindImpl {
-            E getImpl(E e) {
-                if (fromElement != null) {
-                    int fromCmpr = s.compareElements(e, fromElement);
-                    if (fromCmpr < 0 || (fromCmpr == 0 && !fromInclusive)) return lessThanRange(e);
-                    else if (fromCmpr == 0) return equalsToLeftEdge(e);
-                }
-                if (toElement != null) {
-                    int toCmpr = s.compareElements(e, toElement);
-                    if (toCmpr > 0 || (toCmpr == 0 && !toInclusive)) return greaterThanRange(e);
-                    else if (toCmpr == 0) return equalsToRightEdge(e);
-                }
-                return insideRange(e);
-            }
-
-            E get(E e) {
-                E result = getImpl(e);
-                if (result != null && checkInRange(result)) return result;
-                return null;
-            }
-
-            abstract E insideRange(E e);
-
-            abstract E lessThanRange(E e);
-
-            abstract E greaterThanRange(E e);
-
-            abstract E equalsToLeftEdge(E e);
-
-            abstract E equalsToRightEdge(E e);
-
-        }
-
-        private abstract class NonStrictElementFindImpl extends ElementFindImpl {
-            @Override
-            E equalsToLeftEdge(E e) {
-                return fromElement;
-            }
-
-            @Override
-            E equalsToRightEdge(E e) {
-                return toElement;
-            }
-        }
     }
-
 
 }
