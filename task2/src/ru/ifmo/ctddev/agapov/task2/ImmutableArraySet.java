@@ -20,18 +20,18 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
     public ImmutableArraySet(Collection<? extends E> c, Comparator<? super E> comparator) {
         elements = new Object[0];
         this.comparator = comparator;
-        Object [] objs = c.toArray();
+        Object[] objs = c.toArray();
         Arrays.sort(objs, getObjectComparator());
         ArrayList list = new ArrayList();
-        for(int i=0; i< objs.length; ++i){
-            if(i==0 || compareElements(list.get(list.size() - 1), objs[i]) != 0)
+        for (int i = 0; i < objs.length; ++i) {
+            if (i == 0 || compareElements(list.get(list.size() - 1), objs[i]) != 0)
                 list.add(objs[i]);
         }
         elements = list.toArray();
     }
 
     public ImmutableArraySet(Comparator<? super E> comparator) {
-        this(Collections.EMPTY_LIST, comparator);
+        this(Collections.<E>emptyList(), comparator);
     }
 
     public ImmutableArraySet(Collection<? extends E> c) {
@@ -294,15 +294,15 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
             int cI = s.ceilingIndex(e);
             int start = getIndexRangeStart();
             int end = getIndexRangeEnd();
-            if(start <= cI && cI < end) return cI;
-            if(cI >= 0 && cI < start) return start;
+            if (start <= cI && cI < end) return cI;
+            if (cI >= 0 && cI < start) return start;
             return -1;
         }
 
         @Override
         public E ceiling(E e) {
             int ceilingIndex = ceilingIndex(e);
-            if(ceilingIndex < 0) return null;
+            if (ceilingIndex < 0) return null;
             return (E) s.getElement(ceilingIndex);
         }
 
@@ -310,10 +310,10 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
         @Override
         public E higher(E e) {
             int cI = ceilingIndex(e);
-            if(cI < 0) return null;
-            if(s.compareElements(s.getElement(cI), e) == 0)
+            if (cI < 0) return null;
+            if (s.compareElements(s.getElement(cI), e) == 0)
                 ++cI;
-            if(cI < getIndexRangeEnd()) return (E) s.getElement(cI);
+            if (cI < getIndexRangeEnd()) return (E) s.getElement(cI);
             return null;
         }
 
@@ -322,28 +322,28 @@ public class ImmutableArraySet<E> extends AbstractSet<E> implements NavigableSet
             int lI = lowerIndex(e);
             int start = getIndexRangeStart();
             int end = getIndexRangeEnd();
-            if(end == start) return null;
+            if (end == start) return null;
             E first = s.getElement(start);
-            if(lI < 0) return s.compareElements(e, first) == 0 ? first : null;
-            if(start <= lI + 1 && lI + 1 < end && s.compareElements(e, s.getElement(lI + 1)) == 0)
+            if (lI < 0) return s.compareElements(e, first) == 0 ? first : null;
+            if (start <= lI + 1 && lI + 1 < end && s.compareElements(e, s.getElement(lI + 1)) == 0)
                 ++lI;
             return (E) s.getElement(lI);
         }
 
-        private int lowerIndex(E e){
+        private int lowerIndex(E e) {
             int cI = ceilingIndex(e);
             int start = getIndexRangeStart();
             int end = getIndexRangeEnd();
-            if(cI < 0) cI = end - 1;
+            if (cI < 0) cI = end - 1;
             else --cI;
-            if(start <= cI && cI < end) return cI;
+            if (start <= cI && cI < end) return cI;
             return -1;
         }
 
         @Override
         public E lower(E e) {
             int lI = lowerIndex(e);
-            if(lI < 0) return null;
+            if (lI < 0) return null;
             return (E) s.getElement(lI);
         }
 
