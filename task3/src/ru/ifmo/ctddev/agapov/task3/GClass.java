@@ -23,7 +23,8 @@ public class GClass {
         this.parent = parent;
         if (parent.isPrimitive() || parent.isArray() || parent.isEnum())
             throw new ImplerException("Class " + parent.getName() + ": wrong type passed");
-        if (Modifier.isFinal(parent.getModifiers())) throw new ImplerException("Class " + parent.getName() + ": can't implement final class");
+        if (Modifier.isFinal(parent.getModifiers()))
+            throw new ImplerException("Class " + parent.getName() + ": can't implement final class");
         findMethods(parent);
         findConstructors();
         HashMap<String, String> hashMap = new HashMap<String, String>();

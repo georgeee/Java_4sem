@@ -40,8 +40,8 @@ public class Implementor implements Impler {
 
 
     public GClass[] implementClasses(Class<?>[] classes, File root) throws ImplerException {
-        GClass [] gClasses = new GClass[classes.length];
-        for(int i=0; i<classes.length; ++i) gClasses[i] = implementWithGClass(classes[i], root);
+        GClass[] gClasses = new GClass[classes.length];
+        for (int i = 0; i < classes.length; ++i) gClasses[i] = implementWithGClass(classes[i], root);
         return gClasses;
     }
 
