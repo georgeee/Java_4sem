@@ -1,17 +1,23 @@
-package ru.ifmo.ctddev.agapov.task3.method;
-
-import ru.ifmo.ctddev.agapov.task3.GClass;
+package ru.ifmo.ctddev.agapov.task3.generator;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 /**
- * Created by georgeee on 15.03.14.
+ * Class, representing method of some class, presented by GClass instance
  */
 public class GMethod extends GAbstractMethod {
-
+    /**
+     * reflection method object
+     */
     Method method;
 
+    /**
+     * Constructs GMethod from parent and Method object
+     *
+     * @param parent class, to which this method refers
+     * @param method reflection method object
+     */
     public GMethod(GClass parent, Method method) {
         super(parent);
         this.method = method;
@@ -33,13 +39,13 @@ public class GMethod extends GAbstractMethod {
     }
 
     @Override
-    public void printToSB(StringBuilder sb) {
-        sb.append("   @Override\n");
-        super.printToSB(sb);
+    public void printToBuffer(StringBuilder buffer) {
+        buffer.append("   @Override\n");
+        super.printToBuffer(buffer);
     }
 
     @Override
-    void printBody(StringBuilder sb) {
+    protected void printBody(StringBuilder buffer) {
         Type returnType = method.getGenericReturnType();
         if (returnType != Void.TYPE) {
             String val = "";
@@ -52,25 +58,25 @@ public class GMethod extends GAbstractMethod {
             else if (returnType == Float.TYPE) val = "0";
             else if (returnType == Double.TYPE) val = "0";
             else val = "null";
-            sb.append("      return ").append(val).append(";\n");
+            buffer.append("      return ").append(val).append(";\n");
         }
     }
 
     @Override
-    void printHeaderStart(StringBuilder sb) {
-        parent.printTypeParams(sb, method);
+    protected void printHeaderStart(StringBuilder buffer) {
+        parent.printTypeParams(buffer, method);
         Type returnType = method.getGenericReturnType();
-        parent.printType(sb, returnType, getContextClass());
-        sb.append(' ').append(method.getName());
+        parent.printType(buffer, returnType, getContextClass());
+        buffer.append(' ').append(method.getName());
     }
 
     @Override
-    Type[] getExceptionTypes() {
+    protected Type[] getExceptionTypes() {
         return method.getGenericExceptionTypes();
     }
 
     @Override
-    Type[] getParamTypes() {
+    protected Type[] getParamTypes() {
         return method.getGenericParameterTypes();
     }
 }

@@ -1,7 +1,10 @@
 package ru.ifmo.ctddev.agapov.task3;
 
 import info.kgeorgiy.java.advanced.implementor.ImplerException;
+import ru.ifmo.ctddev.agapov.task3.generator.GClass;
 
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -9,6 +12,7 @@ import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -16,29 +20,94 @@ import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
 /**
- * Created by georgeee on 16.03.14.
+ * Utility class, provides flexible and powerful interface to {@link Implementor}
+ * <p/>
+ * Usage:
+ * <p/>
+ * Syntax: java -jar [-debug] [-cp classPath] [-jar|-dir] class1, class2, .. [jarFile|outDir]
+ * <p/>
+ * Classpath format is just the same as for java utilite, look at it's '-cp' parameter
+ * <p/>
+ * To build jar file from classes' implementations:
+ * <p/>
+ * java -jar task3.jar -jar class1, class2, ... jarFile
+ * <p/>
+ * To put generated classes' implementations into outDir:
+ * <p/>
+ * java -jar task3.jar -dir class1, class2, ... outDir
+ * <p/>
+ * To put generated classes' implementations into current dir:
+ * <p/>
+ * java -jar task3.jar class1, class2, ...
+ * <p/>
+ * Hint: instead of class you can pass path to file with line-by-line list of classes.
+ * To do so, pass @filePath as parameter in list of classes
  */
 public class Runner {
-    String[] args;
-    String[] classNames;
+    /**
+     * Command line arguments
+     */
+    private String[] args;
+    /**
+     * Class names to process
+     */
+    private String[] classNames;
 
-    File outDir = null;
-    File buildDir = null;
-    File jarFile = null;
+    /**
+     * directory, to which we save generated implentations (code)
+     */
+    private File outDir = null;
+    /**
+     * directory, to which we put compiled files of implementation
+     */
+    private File buildDir = null;
+    /**
+     * file, to which we should save jar archive with built classes
+     */
+    private File jarFile = null;
 
+    /**
+     * true, if [-jar] argument was passed
+     * Look at usage, described in {@link Runner} class description
+     */
     boolean jarMode = false;
+    /**
+     * true, if [-dirMode] argument was passed
+     * Look at usage, described in {@link Runner} class description
+     */
     boolean dirMode = false;
+    /**
+     * true, if [-debug] argument was passed
+     * Look at usage, described in {@link Runner} class description
+     */
     boolean debugMode = false;
 
+    /**
+     * classPath, which we should use for processing files
+     */
     String classPath = null;
 
+    /**
+     * GClass instances of classes, being implemented
+     */
     GClass[] gClasses;
 
+    /**
+     * Constructs new Runner
+     *
+     * @param args command arguments
+     */
     public Runner(String[] args) {
         this.args = args;
     }
 
-    void init(String[] args) throws InvalidUsageException, IOException {
+    /**
+     * Reads arguments, initializes process parameters
+     *
+     * @throws InvalidUsageException if inappropriate amount of arguments passed
+     * @throws IOException           if error occurs, while reading class list file
+     */
+    private void init() throws InvalidUsageException, IOException {
         if (args.length == 0) throw new InvalidUsageException();
         int i = 0;
         if (args[i].equals("-debug")) {
@@ -94,7 +163,13 @@ public class Runner {
         classNames = classNamesList.toArray(new String[classNamesList.size()]);
     }
 
-    protected void implementClasses() throws ImplerException, ClassNotFoundException {
+    /**
+     * Loads and implements classes
+     *
+     * @throws ImplerException        if it's impossible to implement some class
+     * @throws ClassNotFoundException is some class couldn't be loaded (see {@link ru.ifmo.ctddev.agapov.task3.Implementor#implementClasses(Class[], java.io.File)})
+     */
+    private void implementClasses() throws ImplerException, ClassNotFoundException {
         Class<?>[] classes = new Class[classNames.length];
         for (int i = 0; i < classes.length; ++i) {
             String className = classNames[i];
@@ -107,7 +182,12 @@ public class Runner {
         gClasses = new Implementor().implementClasses(classes, outDir);
     }
 
-    protected void createOutDir() throws IOException {
+    /**
+     * Creates output dir if needed
+     *
+     * @throws IOException if error occurs while trying to create temporary directory
+     */
+    private void createOutDir() throws IOException {
         if (jarMode) {
             try {
                 outDir = mkTmpDir();
@@ -119,14 +199,48 @@ public class Runner {
         }
     }
 
-    protected void compileClasses() throws CompilerException {
+    /**
+     * Compiles classes to {@link #buildDir}
+     *
+     * @throws CompilerException if compiler fails to compile generated code
+     */
+    private void compileClasses() throws CompilerException {
         ArrayList<String> files = new ArrayList<String>(gClasses.length);
         for (GClass gClass : gClasses) files.add(gClass.getOutputFile(outDir).getPath());
-        int exitCode = Compiler.runCompiler(outDir, files, buildDir, classPath);
+        int exitCode = runCompiler(outDir, files, buildDir, classPath);
         if (exitCode != 0) throw new CompilerException("Compiler finished with exitCode " + exitCode);
     }
 
-    protected void buildJar() throws IOException {
+    /**
+     * Executes compiler
+     *
+     * @param srcDir    dir with sources(will be added to classpath)
+     * @param files     files to compile
+     * @param outDir    where to put built classes
+     * @param classPath classpath parameter, null if none
+     * @return compiler's exit code
+     */
+    private int runCompiler(File srcDir, List<String> files, File outDir, String classPath) {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        List<String> args = new ArrayList<String>();
+        args.addAll(files);
+        args.add("-cp");
+        if (classPath != null && !classPath.isEmpty())
+            classPath = classPath.concat(System.getProperty("path.separator")).concat(srcDir.getPath());
+        else
+            classPath = srcDir.getPath();
+        args.add(classPath);
+        args.add("-d");
+        args.add(outDir.getPath());
+        int exitCode = compiler.run(null, null, null, args.toArray(new String[args.size()]));
+        return exitCode;
+    }
+
+    /**
+     * Builds JAR file from built classes
+     * @throws IOException if some IO exception occurs while creating JAR archive
+     */
+    private void buildJar() throws IOException {
         JarOutputStream _jas = null;
         try {
             Manifest manifest = new Manifest();
@@ -167,9 +281,12 @@ public class Runner {
         }
     }
 
+    /**
+     * Executes the utility
+     */
     public void run() {
         try {
-            init(args);
+            init();
             if (debugMode) System.err.println("==== Debug mode on ====");
             loadClassPath();
             createOutDir();
@@ -188,6 +305,10 @@ public class Runner {
         }
     }
 
+    /**
+     * Loads classPath from {@link #classPath}
+     * @throws IOException
+     */
     private void loadClassPath() throws IOException {
         if (classPath != null) {
             String[] parts = classPath.split(Pattern.quote(System.getProperty("path.separator")));
@@ -204,8 +325,10 @@ public class Runner {
         }
     }
 
-
-    protected void printUsage() {
+    /**
+     * Prints usage message
+     */
+    public void printUsage() {
         System.out.println("Usage:\n" +
                 "Syntax: java -jar [-debug] [-cp classPath] [-jar|-dir] class1, class2, .. [jarFile|outDir]\n" +
                 "Classpath format is just the same as for java utilite, look at it's '-cp' parameter\n\n" +
@@ -219,7 +342,11 @@ public class Runner {
                 "To do so, pass @filePath as parameter in list of classes\n");
     }
 
-    protected void deleteTemporaryFolders() throws IOException {
+    /**
+     * Deletes temporary directories
+     * @throws IOException if some IO exception occurs while removing dirs
+     */
+    private void deleteTemporaryFolders() throws IOException {
         try {
             rmDir(outDir);
             rmDir(buildDir);
@@ -228,8 +355,11 @@ public class Runner {
         }
     }
 
-
-    protected void createBuildDir() throws IOException {
+    /**
+     * Creates directory to put built classes into
+     * @throws IOException
+     */
+    private void createBuildDir() throws IOException {
         try {
             buildDir = mkTmpDir();
         } catch (IOException e) {
@@ -237,15 +367,25 @@ public class Runner {
         }
     }
 
-    protected static File mkTmpDir() throws IOException {
+    /**
+     * Creates temporary directory
+     * @return temporary directory File object
+     * @throws IOException if some IO exception occurs while creating temp dir
+     */
+    private static File mkTmpDir() throws IOException {
         File file = File.createTempFile("implementor_tmp_", "");
         file.delete();
         file.mkdir();
         return file;
     }
 
-    protected static void rmDir(File currentDir) throws IOException {
-        Files.walkFileTree(Paths.get(currentDir.getPath()), new SimpleFileVisitor<Path>() {
+    /**
+     * Recursively removes directory
+     * @param dir directory to remove
+     * @throws IOException
+     */
+    protected static void rmDir(File dir) throws IOException {
+        Files.walkFileTree(Paths.get(dir.getPath()), new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 file.toFile().delete();
@@ -260,11 +400,16 @@ public class Runner {
         });
     }
 
+    /**
+     * Is being thrown, when invalid set of parameters is passed
+     */
     protected static class InvalidUsageException extends Exception {
 
     }
 
-
+    /**
+     * Is being thrown when compiler fails to compile generated implementations' files
+     */
     protected static class CompilerException extends Exception {
         public CompilerException() {
         }
