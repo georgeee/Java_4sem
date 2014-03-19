@@ -116,7 +116,7 @@ public class JarCompiler {
      * Compiles classes
      *
      * @param buildDir File, to which we put built classes
-     * @throws CompilerException if compiler fails to compile classes code
+     * @throws CompilerException if compiler fails to compile code
      */
     private void compileClasses(File buildDir) throws CompilerException {
         ArrayList<String> files = new ArrayList<String>(sourceFiles.length);
@@ -149,7 +149,7 @@ public class JarCompiler {
     /**
      * Builds JAR file from built classes
      *
-     * @throws java.io.IOException if some IO exception occurs while creating JAR archive
+     * @throws java.io.IOException
      */
     private void buildJar(File buildDir, File jarFile) throws IOException {
         JarOutputStream _jas = null;

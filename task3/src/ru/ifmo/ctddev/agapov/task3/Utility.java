@@ -39,7 +39,7 @@ public class Utility {
      * Creates temporary directory
      *
      * @return temporary directory File object
-     * @throws IOException if some IO exception occurs while creating temp dir
+     * @throws IOException
      */
     public static File mkTmpDir() throws IOException {
         File file = File.createTempFile("implementor_tmp_", "");
@@ -75,7 +75,7 @@ public class Utility {
      *
      * @param classNames array of class names
      * @return array of class tokens for given class names
-     * @throws ClassNotFoundException if some class couldn't be loaded
+     * @throws ClassNotFoundException
      */
     public static Class<?>[] loadClasses(String[] classNames) throws ClassNotFoundException {
         Class<?>[] classes = new Class[classNames.length];
