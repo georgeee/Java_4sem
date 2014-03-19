@@ -14,27 +14,27 @@ public class GClass {
     /**
      * class token, which we should implement
      */
-    Class<?> parent;
+    private Class<?> parent;
     /**
      * array of imports for generated class instance
      */
-    Map<String, String> imports = new HashMap<>();
+    private Map<String, String> imports = new HashMap<>();
     /**
      * array of class' abstract methods
      */
-    ArrayList<GMethod> methods = new ArrayList<>();
+    private ArrayList<GMethod> methods = new ArrayList<>();
     /**
      * array of class' constructors
      */
-    ArrayList<GConstructor> constructors = new ArrayList<>();
+    private ArrayList<GConstructor> constructors = new ArrayList<>();
     /**
      * set of method's highest occurrence in inheritance/implementation graph, is in use to compute methods array
      */
-    Set<GMethod> found = new HashSet<>();
+    private Set<GMethod> found = new HashSet<>();
     /**
      * map of proper replacements for typeVariables from whole inheritance/implementation graph
      */
-    Map<Class<?>, Map<String, String>> genericVarAliasMap = new HashMap<>();
+    private Map<Class<?>, Map<String, String>> genericVarAliasMap = new HashMap<>();
 
     /**
      * @param parent class token

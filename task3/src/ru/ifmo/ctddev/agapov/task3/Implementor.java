@@ -1,6 +1,5 @@
 package ru.ifmo.ctddev.agapov.task3;
 
-import info.kgeorgiy.java.advanced.implementor.Impler;
 import info.kgeorgiy.java.advanced.implementor.ImplerException;
 import ru.ifmo.ctddev.agapov.task3.generator.GClass;
 
@@ -11,22 +10,23 @@ import java.io.PrintWriter;
 /**
  * Implementor is a simple class, which provides you to implement some abstract class or interface
  */
-public class Implementor implements Impler {
+public class Implementor extends BaseJarImpler {
     /**
      * Creates new Implementor instance
      */
     public Implementor() {
     }
 
+
     /**
      * Implements class, puts it's java code in path, relative to root
      *
      * @param clazz Token of class to implement
      * @param root  Root of directory where to put generated file
-     * @return GClass instance for clazz
      * @throws ImplerException when it's impossible to implement class or IOException occurred
      */
-    public GClass implementWithGClass(Class<?> clazz, File root) throws ImplerException {
+    @Override
+    public File implementWithFile(Class<?> clazz, File root) throws ImplerException {
         GClass gClass;
         PrintWriter pw = null;
         try {
@@ -39,35 +39,7 @@ public class Implementor implements Impler {
             if (pw != null) pw.close();
             throw new ImplerException("IO exception occured while processing class " + clazz.getName(), ex);
         }
-        return gClass;
-    }
-
-
-    /**
-     * Implements class, puts it's java code in path, relative to root
-     *
-     * @param clazz Token of class to implement
-     * @param root  Root of directory where to put generated file
-     * @throws ImplerException when it's impossible to implement class or IOException occurred
-     */
-    @Override
-    public void implement(Class<?> clazz, File root) throws ImplerException {
-        implementWithGClass(clazz, root);
-    }
-
-
-    /**
-     * Implements classes, puts generated java code in path, relative to root
-     *
-     * @param classes Array of class tokens to implement
-     * @param root    Root of directory where to put generated files
-     * @return GClass instances for classes
-     * @throws ImplerException when it's impossible to implement class or IOException occurred
-     */
-    public GClass[] implementClasses(Class<?>[] classes, File root) throws ImplerException {
-        GClass[] gClasses = new GClass[classes.length];
-        for (int i = 0; i < classes.length; ++i) gClasses[i] = implementWithGClass(classes[i], root);
-        return gClasses;
+        return gClass.getOutputFile(root);
     }
 
     /**
@@ -79,4 +51,30 @@ public class Implementor implements Impler {
         new Runner(args).run();
     }
 
+    @Override
+    public void implementClassesJar(Class<?>[] classes, File jarFile, String classPath) throws ImplerException {
+        File[] files = new File[classes.length];
+        File implDir = null;
+        try {
+            try {
+                implDir = Utility.mkTmpDir();
+            } catch (IOException e) {
+                throw new ImplerException("Can't create temporary directory for implementation (source) files", e);
+            }
+            for (int i = 0; i < classes.length; ++i) files[i] = implementWithFile(classes[i], implDir);
+            JarCompiler jarCompiler = new JarCompiler(files, classPath);
+            try {
+                jarCompiler.compile(jarFile);
+            } catch (IOException|JarCompiler.CompilerException e) {
+                throw new ImplerException(e.getMessage(), e);
+            }
+        } finally {
+            if (implDir != null && implDir.exists()) {
+                try {
+                    Utility.rmDir(implDir);
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
 }

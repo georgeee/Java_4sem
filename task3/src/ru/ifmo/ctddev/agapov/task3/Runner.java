@@ -3,21 +3,8 @@ package ru.ifmo.ctddev.agapov.task3;
 import info.kgeorgiy.java.advanced.implementor.ImplerException;
 import ru.ifmo.ctddev.agapov.task3.generator.GClass;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 import java.io.*;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
-import java.util.regex.Pattern;
 
 /**
  * Utility class, provides flexible and powerful interface to {@link Implementor}
@@ -58,10 +45,6 @@ public class Runner {
      */
     private File outDir = null;
     /**
-     * directory, to which we put compiled files of implementation
-     */
-    private File buildDir = null;
-    /**
      * file, to which we should save jar archive with built classes
      */
     private File jarFile = null;
@@ -85,12 +68,8 @@ public class Runner {
     /**
      * classPath, which we should use for processing files
      */
-    String classPath = null;
+    private String classPath = null;
 
-    /**
-     * GClass instances of classes, being implemented
-     */
-    GClass[] gClasses;
 
     /**
      * Constructs new Runner
@@ -164,140 +143,20 @@ public class Runner {
     }
 
     /**
-     * Loads and implements classes
-     *
-     * @throws ImplerException        if it's impossible to implement some class
-     * @throws ClassNotFoundException is some class couldn't be loaded (see {@link ru.ifmo.ctddev.agapov.task3.Implementor#implementClasses(Class[], java.io.File)})
-     */
-    private void implementClasses() throws ImplerException, ClassNotFoundException {
-        Class<?>[] classes = new Class[classNames.length];
-        for (int i = 0; i < classes.length; ++i) {
-            String className = classNames[i];
-            try {
-                classes[i] = ClassLoader.getSystemClassLoader().loadClass(className);
-            } catch (ClassNotFoundException e) {
-                throw new ClassNotFoundException("Class not found: " + className, e);
-            }
-        }
-        gClasses = new Implementor().implementClasses(classes, outDir);
-    }
-
-    /**
-     * Creates output dir if needed
-     *
-     * @throws IOException if error occurs while trying to create temporary directory
-     */
-    private void createOutDir() throws IOException {
-        if (jarMode) {
-            try {
-                outDir = mkTmpDir();
-            } catch (IOException e) {
-                throw new IOException("Can't create temporary directory for sources", e);
-            }
-        } else if (!outDir.exists()) {
-            outDir.mkdirs();
-        }
-    }
-
-    /**
-     * Compiles classes to {@link #buildDir}
-     *
-     * @throws CompilerException if compiler fails to compile generated code
-     */
-    private void compileClasses() throws CompilerException {
-        ArrayList<String> files = new ArrayList<String>(gClasses.length);
-        for (GClass gClass : gClasses) files.add(gClass.getOutputFile(outDir).getPath());
-        int exitCode = runCompiler(outDir, files, buildDir, classPath);
-        if (exitCode != 0) throw new CompilerException("Compiler finished with exitCode " + exitCode);
-    }
-
-    /**
-     * Executes compiler
-     *
-     * @param srcDir    dir with sources(will be added to classpath)
-     * @param files     files to compile
-     * @param outDir    where to put built classes
-     * @param classPath classpath parameter, null if none
-     * @return compiler's exit code
-     */
-    private int runCompiler(File srcDir, List<String> files, File outDir, String classPath) {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        List<String> args = new ArrayList<String>();
-        args.addAll(files);
-        args.add("-cp");
-        if (classPath != null && !classPath.isEmpty())
-            classPath = classPath.concat(System.getProperty("path.separator")).concat(srcDir.getPath());
-        else
-            classPath = srcDir.getPath();
-        args.add(classPath);
-        args.add("-d");
-        args.add(outDir.getPath());
-        int exitCode = compiler.run(null, null, null, args.toArray(new String[args.size()]));
-        return exitCode;
-    }
-
-    /**
-     * Builds JAR file from built classes
-     * @throws IOException if some IO exception occurs while creating JAR archive
-     */
-    private void buildJar() throws IOException {
-        JarOutputStream _jas = null;
-        try {
-            Manifest manifest = new Manifest();
-            manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-            _jas = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(jarFile)), manifest);
-            final JarOutputStream jas = _jas;
-            final Path buildDirPath = Paths.get(buildDir.getPath());
-            try {
-                Files.walkFileTree(buildDirPath, new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) throws IOException {
-                        File file = filePath.toFile();
-                        String entryName = buildDirPath.relativize(filePath).toString();
-                        JarEntry entry = new JarEntry(entryName);
-                        entry.setTime(file.lastModified());
-                        jas.putNextEntry(entry);
-                        BufferedInputStream bis = null;
-                        try {
-                            bis = new BufferedInputStream(new FileInputStream(file));
-                            byte[] buffer = new byte[65536];
-                            while (true) {
-                                int count = bis.read(buffer);
-                                if (count == -1) break;
-                                jas.write(buffer, 0, count);
-                            }
-                        } finally {
-                            if (bis != null) bis.close();
-                        }
-                        jas.closeEntry();
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                throw new IOException("IO exception caught while building jar", e);
-            }
-        } finally {
-            if (_jas != null) _jas.close();
-        }
-    }
-
-    /**
      * Executes the utility
      */
     public void run() {
         try {
             init();
             if (debugMode) System.err.println("==== Debug mode on ====");
-            loadClassPath();
-            createOutDir();
-            implementClasses();
-            if (jarMode) {
-                createBuildDir();
-                compileClasses();
-                buildJar();
-                deleteTemporaryFolders();
+            Utility.loadClassPath(classPath);
+            Implementor implementor = new Implementor();
+            if(jarMode){
+                implementor.implementClassesJar(Utility.loadClasses(classNames), jarFile, classPath);
+            }else{
+                implementor.implementClasses(Utility.loadClasses(classNames), outDir);
             }
-        } catch (ImplerException | ClassNotFoundException | IOException | CompilerException e) {
+        } catch (ImplerException | ClassNotFoundException | IOException e) {
             System.err.println(e.getMessage());
             if (debugMode) e.printStackTrace();
         } catch (InvalidUsageException e) {
@@ -305,25 +164,6 @@ public class Runner {
         }
     }
 
-    /**
-     * Loads classPath from {@link #classPath}
-     * @throws IOException
-     */
-    private void loadClassPath() throws IOException {
-        if (classPath != null) {
-            String[] parts = classPath.split(Pattern.quote(System.getProperty("path.separator")));
-            URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-            for (int i = 0; i < parts.length; ++i) {
-                try {
-                    Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
-                    method.setAccessible(true);
-                    method.invoke(sysloader, new Object[]{new File(parts[i]).toURI().toURL()});
-                } catch (Exception ex) {
-                    throw new IOException("Error while adding classpath, could not add " + parts[i] + " to system classloader: " + ex.getMessage(), ex);
-                }
-            }
-        }
-    }
 
     /**
      * Prints usage message
@@ -342,63 +182,6 @@ public class Runner {
                 "To do so, pass @filePath as parameter in list of classes\n");
     }
 
-    /**
-     * Deletes temporary directories
-     * @throws IOException if some IO exception occurs while removing dirs
-     */
-    private void deleteTemporaryFolders() throws IOException {
-        try {
-            rmDir(outDir);
-            rmDir(buildDir);
-        } catch (IOException e) {
-            throw new IOException("Can't delete temp folders", e);
-        }
-    }
-
-    /**
-     * Creates directory to put built classes into
-     * @throws IOException
-     */
-    private void createBuildDir() throws IOException {
-        try {
-            buildDir = mkTmpDir();
-        } catch (IOException e) {
-            throw new IOException("Can't create temporary directory for class files", e);
-        }
-    }
-
-    /**
-     * Creates temporary directory
-     * @return temporary directory File object
-     * @throws IOException if some IO exception occurs while creating temp dir
-     */
-    private static File mkTmpDir() throws IOException {
-        File file = File.createTempFile("implementor_tmp_", "");
-        file.delete();
-        file.mkdir();
-        return file;
-    }
-
-    /**
-     * Recursively removes directory
-     * @param dir directory to remove
-     * @throws IOException
-     */
-    protected static void rmDir(File dir) throws IOException {
-        Files.walkFileTree(Paths.get(dir.getPath()), new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                file.toFile().delete();
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                dir.toFile().delete();
-                return super.postVisitDirectory(dir, exc);
-            }
-        });
-    }
 
     /**
      * Is being thrown, when invalid set of parameters is passed
@@ -407,20 +190,5 @@ public class Runner {
 
     }
 
-    /**
-     * Is being thrown when compiler fails to compile generated implementations' files
-     */
-    protected static class CompilerException extends Exception {
-        public CompilerException() {
-        }
-
-        public CompilerException(String message) {
-            super(message);
-        }
-
-        public CompilerException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
 
 }
