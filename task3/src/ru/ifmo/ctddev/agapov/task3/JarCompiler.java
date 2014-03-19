@@ -86,8 +86,9 @@ public class JarCompiler {
 
     /**
      * Compiles files to jarFile
+     *
      * @param jarFile resulting <tt>.jar</tt> file
-     * @throws IOException if some IO error occurs
+     * @throws IOException       if some IO error occurs
      * @throws CompilerException if compiler fails to compile code
      */
     public void compile(File jarFile) throws IOException, CompilerException {

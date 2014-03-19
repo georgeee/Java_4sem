@@ -1,7 +1,6 @@
 package ru.ifmo.ctddev.agapov.task3;
 
 import info.kgeorgiy.java.advanced.implementor.ImplerException;
-import ru.ifmo.ctddev.agapov.task3.generator.GClass;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -53,17 +52,17 @@ public class Runner {
      * true, if [-jar] argument was passed
      * Look at usage, described in {@link Runner} class description
      */
-    boolean jarMode = false;
+    private boolean jarMode = false;
     /**
      * true, if [-dirMode] argument was passed
      * Look at usage, described in {@link Runner} class description
      */
-    boolean dirMode = false;
+    private boolean dirMode = false;
     /**
      * true, if [-debug] argument was passed
      * Look at usage, described in {@link Runner} class description
      */
-    boolean debugMode = false;
+    private boolean debugMode = false;
 
     /**
      * classPath, which we should use for processing files
@@ -151,9 +150,9 @@ public class Runner {
             if (debugMode) System.err.println("==== Debug mode on ====");
             Utility.loadClassPath(classPath);
             Implementor implementor = new Implementor();
-            if(jarMode){
+            if (jarMode) {
                 implementor.implementClassesJar(Utility.loadClasses(classNames), jarFile, classPath);
-            }else{
+            } else {
                 implementor.implementClasses(Utility.loadClasses(classNames), outDir);
             }
         } catch (ImplerException | ClassNotFoundException | IOException e) {

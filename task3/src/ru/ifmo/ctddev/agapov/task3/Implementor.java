@@ -65,7 +65,7 @@ public class Implementor extends BaseJarImpler {
             JarCompiler jarCompiler = new JarCompiler(files, classPath);
             try {
                 jarCompiler.compile(jarFile);
-            } catch (IOException|JarCompiler.CompilerException e) {
+            } catch (IOException | JarCompiler.CompilerException e) {
                 throw new ImplerException(e.getMessage(), e);
             }
         } finally {

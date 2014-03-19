@@ -76,11 +76,12 @@ public class Utility {
 
     /**
      * Loads Class tokens for array of class names
+     *
      * @param classNames array of class names
      * @return array of class tokens for given class names
      * @throws ClassNotFoundException if some class couldn't be loaded
      */
-    public static Class<?> [] loadClasses(String [] classNames) throws ClassNotFoundException {
+    public static Class<?>[] loadClasses(String[] classNames) throws ClassNotFoundException {
         Class<?>[] classes = new Class[classNames.length];
         for (int i = 0; i < classes.length; ++i) {
             String className = classNames[i];
