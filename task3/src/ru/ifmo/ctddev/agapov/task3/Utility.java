@@ -14,11 +14,7 @@ import java.util.regex.Pattern;
  */
 public class Utility {
     /**
-     * Loads classPath from {@link #classPath}
-     * @throws java.io.IOException
-     */
-    /**
-     * Loads classes, defined by classPath parameter, nothing if it's null
+     * Loads paths, defined by classPath parameter, nothing if it's null
      *
      * @param classPath classPath in default system format (files|directories, separated by path.separator property)
      * @throws IOException if error occurs loading some part of classpath
