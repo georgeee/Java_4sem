@@ -240,7 +240,8 @@ public class GClass {
      * @param typeVariables
      */
     void printTypeParams(StringBuilder buffer, TypeVariable<?>[] typeVariables) {
-        if (typeVariables.length == 0) return;
+        if (typeVariables.length == 0)
+            return;
         buffer.append('<').append(typeVariables[0]);
         for (int i = 1; i < typeVariables.length; ++i) buffer.append(", ").append(typeVariables[i]);
         buffer.append("> ");

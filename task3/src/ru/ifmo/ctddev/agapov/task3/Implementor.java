@@ -42,15 +42,6 @@ public class Implementor extends BaseJarImpler {
         return gClass.getOutputFile(root);
     }
 
-    /**
-     * Main function, where everything begins
-     *
-     * @param args command line arguments
-     */
-    public static void main(String[] args) {
-        new Runner(args).run();
-    }
-
     @Override
     public void implementClassesJar(Class<?>[] classes, File jarFile, String classPath) throws ImplerException {
         File[] files = new File[classes.length];

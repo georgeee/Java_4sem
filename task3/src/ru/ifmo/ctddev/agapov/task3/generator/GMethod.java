@@ -49,6 +49,7 @@ public class GMethod extends GAbstractMethod {
         Type returnType = method.getGenericReturnType();
         if (returnType != Void.TYPE) {
             String val = "";
+//            boolean.class
             if (returnType == Boolean.TYPE) val = "false";
             else if (returnType == Byte.TYPE) val = "0";
             else if (returnType == Short.TYPE) val = "0";
