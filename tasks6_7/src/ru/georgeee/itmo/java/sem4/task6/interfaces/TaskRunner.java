@@ -1,6 +1,4 @@
-package ru.georgeee.itmo.java.sem4.task6;
-
-import ru.georgeee.itmo.java.sem4.common.Task;
+package ru.georgeee.itmo.java.sem4.task6.interfaces;
 
 /**
  * Created by georgeee on 01.04.14.

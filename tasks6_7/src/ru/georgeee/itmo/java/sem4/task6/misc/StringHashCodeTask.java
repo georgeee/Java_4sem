@@ -1,6 +1,7 @@
-package ru.georgeee.itmo.java.sem4.common;
+package ru.georgeee.itmo.java.sem4.task6.misc;
 
 import javafx.util.Pair;
+import ru.georgeee.itmo.java.sem4.task6.interfaces.Task;
 
 public class StringHashCodeTask implements Task<Pair<String, Integer>, String> {
 

@@ -1,4 +1,4 @@
-package ru.georgeee.itmo.java.sem4.common;
+package ru.georgeee.itmo.java.sem4.task6.misc;
 
 import java.util.concurrent.ThreadLocalRandom;
 

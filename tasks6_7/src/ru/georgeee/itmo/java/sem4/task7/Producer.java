@@ -9,10 +9,11 @@ public class Producer<V> implements Runnable {
 
     @Override
     public void run() {
-        while (!environment.isShutdown()) {
+        while (!environment.isShutdown() && !Thread.interrupted()) {
             try {
                 environment.producerConsumerBus.put(environment.factory.generateCallable());
             } catch (InterruptedException e) {
+                break;
             }
         }
     }

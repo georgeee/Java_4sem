@@ -1,6 +1,8 @@
-package ru.georgeee.itmo.java.sem4.common;
+package ru.georgeee.itmo.java.sem4.task7;
 
 import javafx.util.Pair;
+import ru.georgeee.itmo.java.sem4.task6.misc.StringHashCodeTask;
+import ru.georgeee.itmo.java.sem4.task6.misc.Utility;
 
 import java.util.concurrent.Callable;
 

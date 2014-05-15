@@ -1,18 +1,17 @@
 package ru.georgeee.itmo.java.sem4.task6;
 
+import ru.georgeee.itmo.java.sem4.task6.interfaces.ExtendedTaskRunner;
+import ru.georgeee.itmo.java.sem4.task6.misc.Client;
+import ru.georgeee.itmo.java.sem4.task6.misc.TaskRunnerImpl;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-/**
- * Created by georgeee on 01.04.14.
- */
 public class Main implements Runnable {
-    public static final long FUTURE_GET_TIMEOUT_MILLIS = 400;
-    public static final long AWAIT_TERMINATION_MILLIS = 5000;
     private static final int RUNNER_COUNT = 5;
-    private static final int RUNNER_THREAD_POOL_SIZE = 10;
-    private static final int CLIENT_COUNT = RUNNER_COUNT * RUNNER_THREAD_POOL_SIZE * 30;
+    private static final int RUNNER_THREAD_POOL_SIZE = 2;
+    private static final int CLIENT_COUNT = RUNNER_COUNT * RUNNER_THREAD_POOL_SIZE * 50;
     private static final int TASK_SLEEP_TIMEOUT = 1000;
     private Client[] clients;
     private ExtendedTaskRunner[] runners;
@@ -20,7 +19,7 @@ public class Main implements Runnable {
     public Main(int runnerCount, int clientCount) {
         runners = new ExtendedTaskRunner[runnerCount];
         for (int i = 0; i < runnerCount; ++i) {
-            runners[i] = new TaskRunnerImpl(RUNNER_THREAD_POOL_SIZE, FUTURE_GET_TIMEOUT_MILLIS, AWAIT_TERMINATION_MILLIS);
+            runners[i] = new TaskRunnerImpl(RUNNER_THREAD_POOL_SIZE);
         }
         clients = new Client[clientCount];
         for (int i = 0; i < clientCount; ++i) {
@@ -52,7 +51,8 @@ public class Main implements Runnable {
         try {
             in.readLine();
         } catch (IOException e) {
+        }finally {
+            stop();
         }
-        stop();
     }
 }

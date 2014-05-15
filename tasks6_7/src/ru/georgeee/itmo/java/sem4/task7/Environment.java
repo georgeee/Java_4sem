@@ -1,7 +1,5 @@
 package ru.georgeee.itmo.java.sem4.task7;
 
-import ru.georgeee.itmo.java.sem4.common.CallableFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;

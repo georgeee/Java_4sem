@@ -1,9 +1,7 @@
 package ru.georgeee.itmo.java.sem4.task7;
 
 import javafx.util.Pair;
-import ru.georgeee.itmo.java.sem4.common.CallableFactory;
-import ru.georgeee.itmo.java.sem4.common.StringHashCodeCallable;
-import ru.georgeee.itmo.java.sem4.common.StringHashCodeTask;
+import ru.georgeee.itmo.java.sem4.task6.misc.StringHashCodeTask;
 
 import java.io.BufferedReader;
 import java.io.IOException;

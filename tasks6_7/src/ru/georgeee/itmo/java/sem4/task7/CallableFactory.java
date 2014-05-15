@@ -1,4 +1,4 @@
-package ru.georgeee.itmo.java.sem4.common;
+package ru.georgeee.itmo.java.sem4.task7;
 
 import java.util.concurrent.Callable;
 

@@ -15,9 +15,9 @@ public class Consumer<V> implements Runnable {
             Result<V> result;
             try {
                 Callable<V> callable = environment.producerConsumerBus.take();
-                result = new Result(callable.call());
+                result = new Result<V>(callable.call());
             } catch (Exception e) {
-                result = new Result(e);
+                result = new Result<V>(e);
             }
             try {
                 environment.consumerPublisherBus.put(result);

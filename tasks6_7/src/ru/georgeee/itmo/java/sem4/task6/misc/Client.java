@@ -1,14 +1,16 @@
-package ru.georgeee.itmo.java.sem4.task6;
+package ru.georgeee.itmo.java.sem4.task6.misc;
 
-import ru.georgeee.itmo.java.sem4.common.StringHashCodeTask;
-import ru.georgeee.itmo.java.sem4.common.Utility;
+import ru.georgeee.itmo.java.sem4.task6.exceptions.TaskRunnerCancelledException;
+import ru.georgeee.itmo.java.sem4.task6.exceptions.TaskRunnerImplResultWaitInterruptedException;
 import ru.georgeee.itmo.java.sem4.task6.exceptions.TaskRunnerIsDownException;
+import ru.georgeee.itmo.java.sem4.task6.exceptions.TaskRunnerRunException;
+import ru.georgeee.itmo.java.sem4.task6.interfaces.TaskRunner;
 
 public class Client implements Runnable {
     private volatile boolean isStopped = false;
     private volatile boolean isStarted = false;
-    private TaskRunner taskRunner;
-    private StringHashCodeTask task;
+    private final TaskRunner taskRunner;
+    private final StringHashCodeTask task;
 
     public Client(TaskRunner taskRunner, long taskSleepTimeout) {
         this.taskRunner = taskRunner;
@@ -26,12 +28,22 @@ public class Client implements Runnable {
         }
         System.out.println("Client " + toString() + " started");
         while (!isStopped) {
+            if(Thread.interrupted()){
+                Thread.currentThread().interrupt();
+                isStopped = true;
+                break;
+            }
             String string = Utility.generateRandomString();
             Integer hashCode;
             try {
                 hashCode = taskRunner.run(task, string).getValue();
-            } catch (TaskRunnerIsDownException ex) {
-                System.out.printf("Processing string %s to taskRunner had been interrupted by taskRunner's shut down\n", string);
+            } catch (TaskRunnerIsDownException | TaskRunnerImplResultWaitInterruptedException ex){
+                System.err.printf("Client received exception %s. Stopping...\n", ex.getClass().getSimpleName());
+                isStopped = true;
+                break;
+            } catch (TaskRunnerRunException | TaskRunnerCancelledException ex){
+                //Some logging, these exceptions are not expected to happen
+                //However they could if one uses TaskRunner not in appropriate way
                 isStopped = true;
                 break;
             }
