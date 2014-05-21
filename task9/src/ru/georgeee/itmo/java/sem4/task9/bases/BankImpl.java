@@ -6,17 +6,17 @@ import ru.georgeee.itmo.java.sem4.task9.interfaces.RemotePerson;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Created by georgeee on 08.05.14.
  */
 public class BankImpl implements Bank {
-    Map<Long, RemotePerson> clients;
+    private final ConcurrentMap<Long, RemotePerson> clients;
 
     public BankImpl() {
-        clients = new HashMap<Long, RemotePerson>();
+        clients = new ConcurrentHashMap<Long, RemotePerson>();
     }
 
     @Override
@@ -44,18 +44,15 @@ public class BankImpl implements Bank {
         return clients.get(passportId);
     }
 
+
     @Override
     public boolean createPerson(LocalPerson person) throws RemoteException {
-        if (clients.containsKey(person.getPassportId()))
-            return false;
-        synchronized (clients) {
-            if (clients.containsKey(person.getPassportId()))
-                return false;
-            RemotePersonImpl remotePerson = new RemotePersonImpl(person);
+        RemotePersonImpl remotePerson = new RemotePersonImpl(person);
+        RemotePerson prevPerson = clients.putIfAbsent(person.getPassportId(), remotePerson);
+        if (prevPerson == null) {
             UnicastRemoteObject.exportObject(remotePerson);
-            clients.put(person.getPassportId(), remotePerson);
         }
-        return true;
+        return prevPerson == null;
     }
 
     @Override

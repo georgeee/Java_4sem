@@ -6,9 +6,9 @@ import ru.georgeee.itmo.java.sem4.task9.interfaces.LocalPerson;
  * Created by georgeee on 08.05.14.
  */
 public class LocalPersonImpl implements LocalPerson {
-    protected long passportId;
-    protected String name;
-    protected String surname;
+    protected final long passportId;
+    protected final String name;
+    protected final String surname;
 
     public LocalPersonImpl(long passportId, String name, String surname) {
         this.passportId = passportId;
@@ -42,8 +42,7 @@ public class LocalPersonImpl implements LocalPerson {
 
         if (passportId != that.passportId) return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (surname != null ? !surname.equals(that.surname) : that.surname != null) return false;
+        return !(surname != null ? !surname.equals(that.surname) : that.surname != null);
 
-        return true;
     }
 }

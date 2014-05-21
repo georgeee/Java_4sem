@@ -4,21 +4,22 @@ import ru.georgeee.itmo.java.sem4.task9.interfaces.LocalPerson;
 import ru.georgeee.itmo.java.sem4.task9.interfaces.RemotePerson;
 
 import java.rmi.Remote;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by georgeee on 08.05.14.
  */
 public class RemotePersonImpl implements Remote, RemotePerson {
-    protected Map<Integer, AtomicInteger> amounts;
-    protected long passportId;
-    protected String name;
-    protected String surname;
+    //Map is assumed to be thread-safe
+    protected final ConcurrentMap<Integer, AtomicInteger> amounts;
+    protected final long passportId;
+    protected final String name;
+    protected final String surname;
 
     public RemotePersonImpl(LocalPerson person) {
-        amounts = new HashMap<Integer, AtomicInteger>();
+        amounts = new ConcurrentHashMap<Integer, AtomicInteger>();
         passportId = person.getPassportId();
         name = person.getName();
         surname = person.getSurname();
@@ -33,20 +34,8 @@ public class RemotePersonImpl implements Remote, RemotePerson {
 
     @Override
     public int changeAmount(int accountId, int difference) {
-        AtomicInteger amount = amounts.get(accountId);
-        if (amount == null) {
-            synchronized (amounts) {
-                amount = amounts.get(accountId);
-                if (amount == null) {
-                    amounts.put(accountId, new AtomicInteger(difference));
-                }
-            }
-        }
-        if (amount == null) {
-            logChangeAmount(accountId, difference, difference);
-            return difference;
-        }
-        int res = amount.addAndGet(difference);
+        amounts.putIfAbsent(accountId, new AtomicInteger());
+        int res = amounts.get(accountId).addAndGet(difference);
         logChangeAmount(accountId, difference, res);
         return res;
     }

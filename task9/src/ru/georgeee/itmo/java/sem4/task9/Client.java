@@ -13,7 +13,7 @@ import java.rmi.RemoteException;
  * Created by georgeee on 14.05.14.
  */
 public class Client {
-    Bank bank;
+    private final Bank bank;
 
     public Client(Bank bank) {
         this.bank = bank;
